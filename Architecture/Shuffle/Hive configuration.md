@@ -13,3 +13,8 @@ The configured Shuffle application is:
 ```text
 Application: TheHive
 Action: post_create_alert
+```
+
+![TheHive Configuration](scnshots/hiveconf.png)
+
+
