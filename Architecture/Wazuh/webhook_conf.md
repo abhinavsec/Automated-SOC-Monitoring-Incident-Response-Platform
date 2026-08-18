@@ -44,7 +44,8 @@ The most important part of this configuration for the SOAR pipeline is the <inte
   <alert_format>json</alert_format>
 </integration>
 ```
-img
+
+![webhook_conf_in_wazuh](assets/conf.png)
 
 ### Component Breakdown
 
