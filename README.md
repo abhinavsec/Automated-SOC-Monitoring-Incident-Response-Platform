@@ -20,13 +20,7 @@ The project focuses on demonstrating how **SIEM detection can be connected to SO
 ## Architecture
 
 ```text
-                         ┌─────────────────────┐
-                         │      KALI LINUX     │
-                         │   Attack Simulation │
-                         └──────────┬──────────┘
-                                    │
-                                    │ Attack
-                                    ▼
+                         
                          ┌─────────────────────┐
                          │  WINDOWS ENDPOINT   │
                          │        DC01         │
