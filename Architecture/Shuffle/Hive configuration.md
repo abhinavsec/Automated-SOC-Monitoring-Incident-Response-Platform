@@ -13,5 +13,3 @@ The configured Shuffle application is:
 ```text
 Application: TheHive
 Action: post_create_alert
-
-![Thehive_conf](scnshots//Screenshot 2026-08-18 183353.png)
