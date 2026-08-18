@@ -15,7 +15,7 @@ The workflow eliminates the need for the analyst to manually copy alert informat
 
 ---
 
-# 1. Shuffle Workflow Architecture
+# Shuffle Workflow Architecture
 
 The implemented Shuffle workflow follows this structure:
 
