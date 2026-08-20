@@ -15,6 +15,6 @@ Application: TheHive
 Action: post_create_alert
 ```
 
-![TheHive Configuration](scnshots/hiveconf.png)
+![TheHive Configuration](assets/hiveconf.png)
 
 

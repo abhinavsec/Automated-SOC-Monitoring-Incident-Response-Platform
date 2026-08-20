@@ -40,7 +40,7 @@ since this is home lab set I've used same email address for both sender and reci
 The subject is configured as [CRITICAL ALERT] Rogue Admin Account Created on $repeat.agent.name
 
 And the body is set as:
-![email.body](scnshots/email_body.png)
+![email.body](assets/email_body.png)
 
 ```
 <p>SOC Team,</p>
