@@ -1,7 +1,7 @@
 
 ## Shuffle Automation Workflow: `Alert automation`
 
-![shuffle_workflow](assets/flow.png)
+![shuffle_workflow](assets/workflow.png)
 
 | Node Name | Node Type | Description & Purpose |
 | :--- | :--- | :--- |
