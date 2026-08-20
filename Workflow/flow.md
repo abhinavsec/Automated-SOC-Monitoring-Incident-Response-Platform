@@ -38,13 +38,15 @@ The workflow follows this sequence:
 The result is that a Wazuh alert is automatically converted into a structured alert in TheHive while simultaneously sending an email notification to the SOC analyst.
 
 ## Components Used
-Component	Purpose
-Wazuh	Detects and generates security alerts
-Shuffle SOAR	Receives, processes, and automates the alert workflow
-Webhook	Entry point for Wazuh alerts into Shuffle
-Repeat / Processing	Handles the workflow execution and forwards the alert to downstream actions
-TheHive	Stores and manages the security alert as an incident
-Email	Sends an immediate notification to the SOC analyst
+
+| Component | Purpose |
+| :--- | :--- |
+| **Wazuh** | Detects and generates security alerts |
+| **Shuffle SOAR** | Receives, processes, and automates the alert workflow |
+| **Webhook** | Entry point for Wazuh alerts into Shuffle |
+| **Repeat** | Handles the workflow execution and forwards the alert to downstream actions |
+| **TheHive** | Stores and manages the security alert as an incident |
+| **Email** | Sends an immediate notification to the SOC analyst |
 
 ## End-to-End Workflow
 The complete automation can be divided into the following stages:
