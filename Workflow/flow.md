@@ -3,46 +3,336 @@
 
 ![shuffle_workflow](assets/workflow.png)
 
-| Node Name | Node Type | Description & Purpose |
-| :--- | :--- | :--- |
-| **Webhook 1** | Trigger | Ingests real-time incoming JSON alert payloads from Wazuh. |
-| **Repeat** | Flow Control | Iterates over alert arrays and parses threat telemetry fields. |
-| **TheHive 1** | App Integration | Pushes structured alert data and MITRE tags to **TheHive 5** via REST API. |
-| **Email** | Action | Generates and dispatches automated summary emails to the SOC team. |
+## Overview
+This workflow implements an automated SOC alert-processing pipeline using Wazuh, Shuffle SOAR, TheHive, and Email.
 
-## 🔍 Verified Detection Scenarios & Ingestion
+The purpose of the workflow is to eliminate manual alert forwarding and provide a complete automated path from security event detection to incident creation and analyst notification.
 
-### Privilege Escalation — Unauthorized Local Admin Creation
-* **Source:** Wazuh
-* **Type:** Privilege Escalation
-* **MITRE ATT&CK Mapping:** 
-  * `T1078` — Valid Accounts
-  * `T1136.001` — Create Account: Local Account
-* **TheHive Alert:** Logged and queued under Alerts with severity `High`.
+The workflow follows this sequence:
+```
+┌──────────────┐
+│    Wazuh     │
+│ SIEM / XDR   │
+└──────┬───────┘
+       │ Alert generated
+       ▼
+┌──────────────┐
+│   Webhook    │
+│ Shuffle SOAR │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│    Repeat    │
+│ / Processing │
+└──────┬───────┘
+       │
+       ├──────────────────┐
+       ▼                  ▼
+┌──────────────┐   ┌──────────────┐
+│   TheHive    │   │    Email     │
+│ Create Alert │   │ Notification │
+└──────────────┘   └──────────────┘
+```
 
----
+The result is that a Wazuh alert is automatically converted into a structured alert in TheHive while simultaneously sending an email notification to the SOC analyst.
 
-## 📧 Automated SOC Notification Sample
+## Components Used
+Component	Purpose
+Wazuh	Detects and generates security alerts
+Shuffle SOAR	Receives, processes, and automates the alert workflow
+Webhook	Entry point for Wazuh alerts into Shuffle
+Repeat / Processing	Handles the workflow execution and forwards the alert to downstream actions
+TheHive	Stores and manages the security alert as an incident
+Email	Sends an immediate notification to the SOC analyst
 
-When a high-severity alert is triggered, Shuffle formats the metadata and fires an immediate alert to analysts:
+## End-to-End Workflow
+The complete automation can be divided into the following stages:
 
-```text
-Subject: [CRITICAL ALERT] Rogue Admin Account Created on windows
-From: socanalyst59@gmail.com
+* Security event occurs on the monitored endpoint.
+* Wazuh agent collects the relevant event.
+* Wazuh Manager analyzes the event.
+* A Wazuh rule generates a security alert.
+* Wazuh sends the alert to the Shuffle webhook.
+* Shuffle receives the alert through the Webhook trigger.
+* Shuffle processes the received alert.
+* The workflow forwards the relevant alert information to TheHive.
+* TheHive creates a new security alert.
+* The same workflow sends an email notification.
+* The SOC analyst can investigate the alert in TheHive and through the email notification.
 
-SOC Team,
+# Stage 1 – Security Event Detection in Wazuh
 
-An administrative account creation event was detected by Wazuh and ingested into TheHive.
+The process begins when a security-relevant event occurs on a monitored endpoint.
 
-=== Incident Summary ===
-Host Name: DC01
-New Account: attacker
-Actor (Creator): Administrator
-Logon ID: 0x1ac893
-Event Time: 2026-08-16T07:14:18.1799614Z
+For example, in this implementation, a Windows account creation event was detected.
 
-=== Action Required ===
-1. Check change management tickets to confirm if this account creation was authorized.
-2. If unauthorized, open the corresponding case in TheHive to disable the account.
+The Windows event was associated with:
 
--- Automated SOC Pipeline (Shuffle SOAR)
+Event ID: 4720
+
+Event ID 4720 indicates that a user account was created.
+
+Wazuh receives the Windows security event through the Wazuh agent and evaluates it against its configured detection rules.
+
+In this example, the Wazuh rule generated:
+
+Rule ID: 60109
+
+The resulting alert contained information such as:
+
+Alert:
+Account Created: attacker on DC01
+
+Target Host:
+DC01
+
+IP Address:
+10.0.3.20
+
+New Account:
+attacker
+
+Created By:
+Administrator
+
+Event ID:
+4720
+
+The alert was categorized with security context including:
+
+Account Creation
+Persistence
+T1098
+
+This allows the event to be treated as a potentially malicious account creation or persistence activity.
+
+# Stage 2 – Wazuh Sends the Alert to Shuffle
+
+After Wazuh generates the alert, the alert is forwarded to the Shuffle SOAR platform using a webhook integration.
+
+The Wazuh integration configuration contains a Shuffle webhook endpoint.
+
+Conceptually, the configuration follows this structure:
+
+```img of conf fo webhook in wazuh```
+
+The actual webhook URL is configured according to the local Shuffle deployment.
+
+The important function of this integration is:
+
+Wazuh Alert
+     │
+     ▼
+Shuffle Webhook
+
+Instead of requiring a SOC analyst to manually copy the Wazuh alert into another platform, the alert is automatically transmitted to Shuffle.
+
+This is the first major automation point in the pipeline.
+
+# Stage 3 – Shuffle Webhook Trigger
+
+The Shuffle workflow begins with a Webhook trigger.
+
+The webhook acts as the external entry point for the automation.
+
+The workflow shown in Shuffle contains:
+
+Webhook 1
+     │
+     ▼
+Repeat
+
+The webhook receives the HTTP request generated by Wazuh and makes the alert data available to the rest of the workflow.
+
+The received payload contains the Wazuh alert information, including fields such as:
+
+Alert title
+Rule ID
+Host information
+Event information
+Timestamp
+User/account information
+MITRE ATT&CK information
+Severity and other alert metadata
+
+This allows Shuffle to use the original Wazuh alert as the input for subsequent automated actions.
+
+# Stage 4 – Shuffle Workflow Processing
+
+After receiving the alert, Shuffle passes the data into the next workflow stage.
+
+The workflow uses a Repeat node as part of the processing and execution flow.
+
+The workflow architecture is:
+
+                    ┌──────────────┐
+                    │   Webhook    │
+                    │  Wazuh Input │
+                    └──────┬───────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │    Repeat    │
+                    └──────┬───────┘
+                           │
+                 ┌─────────┴─────────┐
+                 │                   │
+                 ▼                   ▼
+          ┌─────────────┐     ┌─────────────┐
+          │   TheHive   │     │    Email    │
+          │    Alert    │     │ Notification│
+          └─────────────┘     └─────────────┘
+
+The workflow therefore performs multiple downstream actions from the received security alert.
+
+This is the core SOAR functionality of the project: one security event triggers multiple automated response actions.
+
+# Stage 5 – Creating the Alert in TheHive
+
+One of the main actions performed by Shuffle is forwarding the alert to TheHive.
+
+The purpose of this integration is to convert the raw Wazuh detection into a manageable security alert inside the incident-response platform.
+
+TheHive receives information from the Wazuh alert and creates a new alert.
+
+```img of hiveee```
+
+In the demonstrated alert, TheHive displays:
+
+Title:
+Account Created: attacker on DC01
+
+Type:
+Privilege Escalation
+
+Source:
+Wazuh
+
+Reference:
+Rule: 60109
+
+The alert is also assigned a severity:
+
+SEV: HIGH
+
+and contains contextual tags:
+
+Account Creation
+Persistence
+T1098
+Wazuh-Alert
+
+This information makes the alert much more useful for SOC investigation than simply receiving a raw log entry.
+
+### TheHive Alert Details
+
+```img hiveeee 2 ```
+
+The generated TheHive alert contains the relevant information extracted from the Wazuh event.
+
+The description includes:
+
+A user account creation event (Event ID: 4720) was detected by Wazuh.
+
+The alert provides details such as:
+
+Target Host:
+DC01 (10.0.3.20)
+
+New Account:
+attacker
+
+Created By:
+Administrator
+
+Subject Logon ID:
+0x1ac893
+
+Timestamp:
+2026-08-16T07:14:18.1799614Z
+
+This gives the SOC analyst enough context to begin investigating the event.
+
+TheHive therefore acts as the central incident-management layer of the workflow.
+
+### TheHive Alert Classification
+
+The automation also adds contextual information to the alert.
+
+The example alert is classified as:
+
+Type: Privilege Escalation
+Severity: High
+Source: Wazuh
+Reference: Rule 60109
+
+The alert contains the following tags:
+
+Account Creation
+Persistence
+T1098
+Wazuh-Alert
+
+The MITRE ATT&CK technique:
+
+T1098 – Account Manipulation
+
+provides additional threat-context for the event.
+
+This allows analysts to quickly understand the potential attack behavior associated with the alert.
+
+# Stage 6 – Email Notification
+
+In parallel with the TheHive integration, Shuffle sends an email notification.
+
+This provides an immediate notification mechanism for the SOC analyst.
+
+```img of email```
+
+# Final Workflow Result
+
+Once the workflow completes, the same Wazuh security event is available through two response channels:
+```
+                     Wazuh
+                       │
+                       ▼
+                  Shuffle Webhook
+                       │
+                       ▼
+                  Shuffle SOAR
+                       │
+              ┌────────┴────────┐
+              │                 │
+              ▼                 ▼
+           TheHive            Email
+              │                 │
+              ▼                 ▼
+       Investigation        Analyst
+       & Case Handling     Notification
+```
+#### TheHive
+
+TheHive provides:
+
+ * Centralized alert management
+ * Severity classification
+ * MITRE ATT&CK context
+ * Alert tags
+ * Host information
+ * Event details
+ * Investigation and case-management capabilities
+
+### Email
+
+The email provides:
+
+ * Immediate notification
+ * Incident summary
+ * Affected host
+ * Created account
+ * Event timestamp
+ * Recommended analyst action
+
+
+
