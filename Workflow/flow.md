@@ -1,6 +1,8 @@
 
 ## Shuffle Automation Workflow: `Alert automation`
 
+![shuffle_workflow](assets/flow.png)
+
 | Node Name | Node Type | Description & Purpose |
 | :--- | :--- | :--- |
 | **Webhook 1** | Trigger | Ingests real-time incoming JSON alert payloads from Wazuh. |
